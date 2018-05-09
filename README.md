@@ -1,6 +1,6 @@
-# Kinematics Project Starter Code
+# Perception Project Starter Code
 
-The objective of this project is to program the robotic arm to pick up an element and place it in a defined place, using tools such as Gazebo and RViz.
+The objective of this project is to identify a series of objects and these will be picked up by the robot arm and then placed in boxes that are located on the left and right sides of the robot.
 
 ---
 <!--more-->
@@ -71,8 +71,9 @@ The summary of the files and folders int repo is provided in the table below:
 | File/Folder                     | Definition                                                                                            |
 | :------------------------------ | :---------------------------------------------------------------------------------------------------- |
 | gazebo_grasp_plugin/*           | Folder that contains a collection of tools and plugins for Gazebo.                                    |
-| kr210_claw_moveit/*             | Folder that contains all the configuration and launch files for using the kuka_arm with the MoveIt.   |
-| kuka_arm/*                      | Folder that contains the kuka_arm package.                                                            |
+| pr2_moveit/*                    | Folder that contains all the movements of the robot.                                                  |
+| pr2_robot/*                     | Folder that contains everything related to the identification of the objects for their later          |
+|                                 | displacement.                                                                                         |
 | misc_images/*                   | Folder containing the images of the project.                                                          |
 |                                 |                                                                                                       |
 | IK_debug.py                     | File with the code to debug the project.                                                              |
@@ -84,7 +85,7 @@ The summary of the files and folders int repo is provided in the table below:
 
 ### README_udacity.md
 
-In the following link is the [udacity readme](https://github.com/Abhaycl/RoboND-Kinematics-1P2/blob/master/README_udacity.md), for this practice provides instructions on how to install and configure the environment.
+In the following link is the [udacity readme](https://github.com/Abhaycl/RoboND-Perception-1P3/blob/master/README_udacity.md), for this practice provides instructions on how to install and configure the environment.
 
 ---
 
