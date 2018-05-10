@@ -80,7 +80,7 @@ In the following link is the [udacity readme](https://github.com/Abhaycl/RoboND-
 9. Congratulations! Your Done!
 
 
-## [Rubric](https://review.udacity.com/#!/rubrics/1067/view) Points
+## [Rubric Points](https://review.udacity.com/#!/rubrics/1067/view)
 ### Here I will consider the rubric points individually and describe how I addressed each point in my implementation.  
 
 ---
