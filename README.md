@@ -7,37 +7,13 @@ The objective of this project is to identify a series of objects and these will 
 
 [//]: # (Image References)
 
-[image0]: ./misc_images/forward_kinematics.png "Forward Kinematics"
-[image1]: ./misc_images/kuka_sketch.png "Kuka KR210 Sketch"
-[image2]: ./misc_images/calculate_moveit.png "Calculate Moveit"
-[image3]: ./misc_images/urdf.png "URDF Coordinate System"
-[image4]: ./misc_images/angles1.png "Calculate Angles1"
-[image5]: ./misc_images/arctg.gif "Arc Tangente"
-[image6]: ./misc_images/ik_equations.png "IK Equations"
-[image7]: ./misc_images/arm_works1.png "Arm Works1"
-[image8]: ./misc_images/arm_works2.png "Arm Works2"
-[image9]: ./misc_images/error.png "Error"
-[image10]: ./misc_images/kuka_kr210.png "Kuka Kr210"
-[image11]: ./misc_images/paralelo.png "Parallel"
-[image12]: ./misc_images/perpendicular.png "Perpendicular"
-[image13]: ./misc_images/formula1.png ""
-[image14]: ./misc_images/formula2.png ""
-[image15]: ./misc_images/formula3.png ""
-[image16]: ./misc_images/formula4.png ""
-[image17]: ./misc_images/formula5.png ""
-[image18]: ./misc_images/Rx.png "Rx"
-[image19]: ./misc_images/Dx.png "Dx"
-[image20]: ./misc_images/Rz.png "Rz"
-[image21]: ./misc_images/Oi.png "Oi"
-[image22]: ./misc_images/Dz.png "Dz"
-[image23]: ./misc_images/Di.png "Di"
-[image24]: ./misc_images/a.png "a"
-[image25]: ./misc_images/O.png "O"
-[image26]: ./misc_images/formula6.png ""
-[image27]: ./misc_images/ik_equations1.png "IK Equations1"
-[image28]: ./misc_images/ik_equations2.png "IK Equations2"
-[image29]: ./misc_images/ik_equations3.png "IK Equations3"
-[image30]: ./misc_images/ik_equations4.png "IK Equations4"
+[image0]: ./misc_images/ ""
+[image1]: ./misc_images/voxel_downsampled.png "Voxel"
+[image2]: ./misc_images/pass_through_filtered.png "Pass Through Filtered"
+[image3]: ./misc_images/extracted_inliers.png "Extracted Inliers"
+[image4]: ./misc_images/extracted_outliers.png "Extracted Outliers"
+[image5]: ./misc_images/linear_rfb.png "Linear vs RFB"
+
 
 #### How build the project
 
@@ -56,15 +32,6 @@ For demo mode make sure the **demo** flag is set to _"true"_ in `inverse_kinemat
 3.  ./pr2_safe_spawner.sh
 ```
 
-#### How to run the program with your own code
-
-For the execution of your own code make sure the **demo** flag is set to _"false"_ in `inverse_kinematics.launch` file under /RoboND-Kinematics-Project/kuka_arm/launch
-
-```bash
-1.  cd ~/catkin_ws/src/RoboND-Kinematics-Project/kuka_arm/scripts
-2.  ./safe_spawner.sh
-```
-
 ---
 
 The summary of the files and folders int repo is provided in the table below:
@@ -77,7 +44,6 @@ The summary of the files and folders int repo is provided in the table below:
 |                                 | displacement.                                                                                         |
 | misc_images/*                   | Folder containing the images of the project.                                                          |
 |                                 |                                                                                                       |
-| IK_debug.py                     | File with the code to debug the project.                                                              |
 | README.md                       | Contains the project documentation.                                                                   |
 | README_udacity.md               | Is the udacity documentation that contains how to configure and install the environment.              |
 | writeup_template.md             | Contains an example of how the practice readme documentation should be completed.                     |
@@ -115,243 +81,236 @@ In the following link is the [udacity readme](https://github.com/Abhaycl/RoboND-
 You're reading it!
 
 ---
-Some of the features of the Kuka Kr210 robotic arm that we are going to use are shown in the following image:
 
-![alt text][image10]
+### Accessing the 3D Camera Data
 
-![alt text][image0]
-###### **Image**  **1** : Model represented by the foward_kinematics.launch file
+The fist step is to read the data coming from the RGBD sensor. For that I've created a ROS node 'clustering' and subscribed to the /pr2/world/points topic:
 
-### Kinematic Analysis
-#### 1. Run the forward_kinematics demo and evaluate the kr210.urdf.xacro file to perform kinematic analysis of Kuka KR210 robot and derive its DH parameters.
+```python
+    # TODO: ROS node initialization
+    rospy.init_node('clustering', anonymous = True)
+    
+    # TODO: Create Subscribers
+    pcl_sub = rospy.Subscriber("/pr2/world/points", pc2.PointCloud2, pcl_callback, queue_size=1)
+```
 
-I get help from Lesson 2 and the project module to use the file forward_kinematics.launch to generate the kinematic sketch (image 2). The kr210.urdf.xacro file contains all the robot specific information like link lengths, joint offsets, actuators, etc. and it's necessary to derive DH parameters and create transform matrices.
+The function pcl_callback will then be called every time the sensor publishes a new pc2.PointCloud2 message.
+
+### Point Cloud Filtering
+
+As it turns out 3D Cameras can at times provide too much information. It is often desirable to work with lower resolutions as well as to limit the focus to a specific region of interest (ROI).
+
+To reduce the resolution of the camera input down to a tractable amount I've applied a downsampling filter that reduced the resolution down to 1 cubic cm:
+
+```python
+    # Voxel Grid filter
+    vox = input_msg.make_voxel_grid_filter()
+    # Choose a voxel size
+    LEAF_SIZE = 0.01
+    # Set the voxel (or leaf) size
+    vox.set_leaf_size(LEAF_SIZE, LEAF_SIZE, LEAF_SIZE)
+    # Call the filter function to obtain the resultant downsampled point cloud
+    cloud_filtered = vox.filter()
+```
 
 ![alt text][image1]
-###### **Image**  **2** : Sketch to display links with offsets, lengths, and joint axes.
 
-I get the twist angles:
+Then to narrow the focus to the table I've applied a pass through filter on the 'z' axis to only capture points above and within the table:
 
-|    |     |    |     |          |
-| -- | --- | -- | --- | -------- |
-| Z0 | ![alt text][image11] | Z1 | --> | a0 = 0   |
-| Z1 | ![alt text][image12] | Z2 | --> | a1 = -90 |
-| Z2 | ![alt text][image11] | Z3 | --> | a2 = 0   |
-| Z3 | ![alt text][image12] | Z4 | --> | a3 = -90 |
-| Z4 | ![alt text][image12] | Z5 | --> | a4 = 90  |
-| Z5 | ![alt text][image12] | Z6 | --> | a5 = -90 |
-| Z6 | ![alt text][image11] | ZG | --> | a6 = 0   |
-
-#### 2. Using the DH parameter table you derived earlier, create individual transformation matrices about each joint. In addition, also generate a generalized homogeneous transform between base_link and gripper_link using only end-effector(gripper) pose.
-
-I get the following data from the file kr210.urdf.xacro
-
-* J0 = (    0, 0,      0)
-* J1 = (    0, 0,   0.33)
-* J2 = ( 0.35, 0,   0.42)
-* J3 = (    0, 0,   1.25)
-* J4 = ( 0.96, 0, -0.054)
-* J5 = ( 0.54, 0,      0)
-* J6 = (0.193, 0,      0)
-* JG = ( 0.11, 0,      0)
-
-Where the following values are deducted:
-
-* 0->1 ;  0.33 + 0.42 = 0.75
-* 3->4 ;  0.96 + 0.54 = 1.5
-* 6->G ; 0.193 + 0.11 = 0.303
-
-Using the kr210.urdf.xacro file the below DH Parameter table was generated. Values were obtained by looking for the joints section in the xacro file; there using the sketch from image 2 distances from joint to joint were obtained and used as a(i-1) and d(i) values repective to their axis as provided in the Figure. Some values, like d(G) might need to obtained by the sum of multiple joint x, y, z values, in this case, the x value of joint 6 and the x value of the gripper joint.
-
-Links | alpha(i-1) | a(i-1) | d(i) | theta(i)
----- | --- | --- | --- | ---
-0->1 | 0 | 0 | 0.75 | q1
-1->2 | - pi/2 | 0.35 | 0 | -pi/2 + q2
-2->3 | 0 | 1.25 | 0 | q3
-3->4 | - pi/2 | -0.054 | 1.5 | q4
-4->5 |   pi/2 | 0 | 0 | q5
-5->6 | - pi/2 | 0 | 0 | q6
-6->G | 0 | 0 | 0.303 | 0
-
-Given the DH data we will apply the following operations:
-
-![alt text][image13]
-
-In which ![alt text][image18] is a rotation matrix about the X axis by ![alt text][image19] is translation matrix along the X axis by ![alt text][image20] is a rotation matrix about the Z axis by ![alt text][image21], ![alt text][image22] is translation matrix along the Z axis by ![alt text][image23] and ![alt text][image24], a, ![alt text][image25] and d are D-H parameters of the robot. So we have:
-
-![alt text][image14]
-
-![alt text][image15]
-
-![alt text][image16]
-
-![alt text][image17]
-
-The homogeneous transform for the DH coordinates system from joint i-1 to i is:
-
-Let HT_i-1, i =
-
-![alt text][image26]
-
-Hence, the following matrix multiplication computes the final transformation matrix that gives the position and orientation of the robot’s end effector relative to its base.
-
-HT0_G = HT0_1 * HT1_2 * HT2_3 * HT3_4 * HT4_5 * HT5_6 * HT6_G
-
-#### 3. Decouple Inverse Kinematics problem into Inverse Position Kinematics and inverse Orientation Kinematics; doing so derive the equations to calculate all individual joint angles.
-
-Inverse kinematics problem of a robot manipulator is finding the joint angles of the robot by having the position and orientation of the end effector of the robot. Inverse kinematics problem of a serial manipulator is more important than the forward kinematics, as it is essential to move the gripper of the robot to a required position with a defined orientation in order to, for instance, grab an object in that position and orientation.
-
-Ok, now that I have the forward kinematics modeled it is time to tackle the real problem: calculate all joint angles for a trajectory, defined as an array of poses, calculated by MoveIt.
+```python
+    passthrough = cloud_filtered.make_passthrough_filter()
+    
+    filter_axis = 'z'
+    passthrough.set_filter_field_name(filter_axis)
+    axis_min = 0.59
+    axis_max = 0.85
+    passthrough.set_filter_limits(axis_min,axis_max)
+    cloud_filtered = passthrough.filter()
+```
 
 ![alt text][image2]
+###### Using a passthrough filter to crop on the z and y axles
 
-###### Trajectory calculated by MoveIt.
 
-The inverse kinematics problem was resolved analytically by dividing the problem in two parts: 1) Find the first 3 joint angles (counting from the base) from the pose position and 2) Find the remaining 3 wrist joint angles from the pose orientation.
+### RANSAC Plane Segmentation
 
-##### Inverse Position Kinematics
+Now that I have selected the data that I need it is time to start identifying the elements in the scene. In the lesson we learn how to use RANSAC to fit a plane in the point cloud. With this technique I was then able to separate the objects from the table:
 
-First I have to find the position of the center of the wrist given the end-effector coordinate. But before that I need to account for a rotation discrepancy between DH parameters and Gazebo (URDF).
+```python
+    # Create the segmentation object
+    seg = cloud_filtered.make_segmenter()
+    # Set the model to be fitted
+    seg.set_model_type(pcl.SACMODEL_PLANE)
+    seg.set_method_type(pcl.SAC_RANSAC)
+    # Max distance for a point to be considered fitting the model
+    max_distance = 0.019
+    seg.set_distance_threshold(max_distance)
+    # Call segment function to obtain set of inlier indices and model coefficients
+    inliers, coefficients = seg.segment()
+    
+    # TODO: Extract inliers and outliers
+    # Inliers, setting the negative flag to False filters for the table
+    cloud_table = cloud_filtered.extract(inliers, negative = False)
+    # Outliers, # Setting the negative flag to True filters for the objects
+    cloud_objects = cloud_filtered.extract(inliers, negative = True)
+```
+
+Here Inliers are the points that fit a plane equation therefore should belong to the table. On the other hand outliers are the remaining points that represent the objects over the table.
 
 ![alt text][image3]
 
-For that I've created a correctional rotation composed by a rotation on the Z axis of 180° (π) followed by a rotation on the Y axis of -90 (-π/2).
-
-```python
-            # Compensate for rotation discrepancy between DH parameters and Gazebo
-            rot_corr = Rot_z.subs(y, pi) * Rot_y.subs(p, -pi/2)
-```
-
-Finally I've performed a translation on the opposite direction of the gripper link (that lays on the Z axis) to find the wrist center.
-
-Calculate the wrist center by applying a translation on the opposite direction of the gripper, from the DH parameter table we can find that the griper link offset (d7) is 0.303m.
-
-```python
-            ### Your IK code here
-            # Compensate for rotation discrepancy between DH parameters and Gazebo
-            rot_corr = Rot_z.subs(y, pi) * Rot_y.subs(p, -pi/2)
-            rot_rpy = rot_rpy * rot_corr
-            rot_rpy = rot_rpy.subs({'r': roll, 'p': pitch, 'y': yaw})
-            #
-            #
-            # Leveraging DH distances and offsets
-            d_1 = dh[d1] # d1 = 0.75
-            d_4 = dh[d4] # d4 = 1.5
-            d_7 = dh[d7] # d7 = 0.303
-            a_1 = dh[a1] # a1 = 0.35
-            a_2 = dh[a2] # a2 = 1.25
-            a_3 = dh[a3] # a3 = -0.054
-            
-            # Calculate joint angles using Geometric IK method
-            wx = px - (d_7 * rot_rpy[0,2])
-            wy = py - (d_7 * rot_rpy[1,2])
-            wz = pz - (d_7 * rot_rpy[2,2])
-```
-
-Once the wrist center (WC) is known we can calculate the first joint angle with a simple arctangent.
-
 ![alt text][image4]
+###### RANSAC Plane Inliers (table) and outliers (objects)
+
+
+### Clustering Segmentation
+
+Finally I’ve used Euclidean Clustering to distinguish the objects from one another. This approach differs from k-means in the sense that it doesn't require the prior knowledge of the number of objects we are trying to detect. Unfortunately it uses an hierarchical representation of the point cloud that can be computationally expensive to obtain.
+
+```python
+    white_cloud = XYZRGB_to_XYZ(cloud_objects) # Apply function to convert XYZRGB to XYZ
+    tree = white_cloud.make_kdtree()
+    
+    # Create a cluster extraction object
+    ec = white_cloud.make_EuclideanClusterExtraction()
+    
+    ec.set_ClusterTolerance(0.06)
+    ec.set_MinClusterSize(50)
+    ec.set_MaxClusterSize(3000)
+    # Search the k-d tree for clusters
+    ec.set_SearchMethod(tree)
+    # Extract indices for each of the discovered clusters
+    cluster_indices = ec.Extract()
+```
+
+That's it! Now that I have all objects separated from one another it is time to classify them. For that I'll use a simple but powerful Machine Learning tool: Support Vector Machine (SVM)
+
+### Extracting Point Cloud Features
+
+SVMs are not as sophisticated as Deep Neural Nets and they require some hand crafted features to work properly. The features that I’ve created are color and normals histograms concatenated together:
+
+```python
+        # Extract histogram features
+        chists = compute_color_histograms(ros_cluster, using_hsv=True)
+        normals = get_normals(ros_cluster)
+        nhists = compute_normal_histograms(normals)
+        feature = np.concatenate((chists, nhists))
+```
+
+The rational is that histograms do a fairly good job at capturing the overall color and shape characteristics of point clouds but with a limited number of dimensions.
+
+
+### Training the SVM Model
+
+With the labeled dataset in hand, I moved to training the SVM model. The only change I made to the train_svm.py script was to change the kernel type to RBF (Radial Basis Function) to allow for more complex decision boundaries resulting in richer features.
+
+```python
+# Create classifier
+clf = svm.SVC(kernel = 'rbf')
+```
 
 ![alt text][image5]
+###### Comparison between linear and RFB kernels
 
-Where: s = wz - d_1
 
-With the help of the Law of Cosines I've calculated the values for angles alpha and bet.
+I quickly notice how powerful SVMs are for small datasets. It only took me 20 examples per class to get to a very high accuracy! Usually DNNs, as a comparison, requires thousands of examples per class for decent results.
 
-![alt text][image6]
 
-![alt text][image27]
+### Object Recognition and Results
 
-![alt text][image28]
+My model did a great job identifying objets. It recognized most of the objects successfully on all table configurations. It only failed to recognize 1 object out of 8 on World 3
 
-![alt text][image29]
 
-![alt text][image30]
+The prediction pipeline consists of loading the model from a file then scaling the input feature vector appropriately (scaler also comes with the model file) and finally calling the predict method:
 
 ```python
-            # Calculating theta 1
-            theta1 = atan2(wy, wx)
-            
-            # For the evaluation of the angles we apply the law of cosine
-            # Calculating radius
-            r = sqrt(wx**2 + wy**2) - a_1
-            
-            # Use of the cosine law to calculate theta2 theta3 using A, B, C sides of the triangle
-            # Side A
-            A = sqrt(a_3**2 + d_4**2) # A = 1.50097
-            # Side B
-            B = sqrt((wz - d_1)**2 + r**2)
-            # Side C
-            C = a_2 # C = 1.25
-            
-            # Angle a (alpha)
-            a = acos((C**2 + B**2 - A**2) / (2 * C * B))
-            # Calculating theta 2
-            theta2 = (pi/2) - a - atan2((wz - d_1), r)
-            # Angle b (beta)
-            b = acos((C**2 + A**2 - B**2) / (2 * C * A))
-            # Calculating theta 3
-            theta3 = (pi/2) - beta - atan2(-a_3, d_4)
-            
-            # Calculating Euler angles from orientation
-            R0_3 = HT0_1[0:3, 0:3] * HT1_2[0:3, 0:3] * HT2_3[0:3, 0:3]
-            R0_3 = R0_3.evalf(subs={'q1': theta1, 'q2': theta2, 'q3': theta3})
-            # R3_6 = R0_3.inv("LU")*Rrpy # Calculate inverse of R0_3:
-            R3_6 = R0_3.HT * rot_rpy
-            
-            # Calculating theta 4
-            theta4 = atan2(R3_6[2, 2], -R3_6[0, 2])
-            # Calculating theta 5
-            theta5 = atan2(sqrt(R3_6[0, 2]**2 + R3_6[2, 2]**2), R3_6[1, 2])
-            # Calculating theta 6
-			theta6 = atan2(-R3_6[1, 1], R3_6[1, 0])
+        # Make the prediction
+        # Retrieve the label for the result and add it to detected_objects_labels list
+        prediction = clf.predict(scaler.transform(feature.reshape(1,-1)))
+        label = encoder.inverse_transform(prediction)[0]
+        detected_objects_labels.append(label)
+        
+        # Publish a label into RViz
+        label_pos = list(white_cloud[pts_list[0]])
+        label_pos[2] += .4
+        object_markers_pub.publish(make_label(label,label_pos, index))
 ```
 
-### Project Implementation
+### Pick Place ROS Message Request
 
-#### 1. Fill in the `IK_server.py` file with properly commented python code for calculating Inverse Kinematics based on previously performed Kinematic Analysis. Your code must guide the robot to successfully complete 8/10 pick and place cycles. Briefly discuss the code you implemented and your results.
+The final piece to complete this project is to calculate all necessary arguments to call the pick_place_routine service to perform a successful pick and place operation. Also these parameters should be written to a yaml file, presumably to make it easier to grade the project submission.
 
-In order to obtain the transformation and rotation matrices, I decided to utilize functions to generate all of the different matrices. This is shown in the [IK_server.py] snippet below.
+
+#### Reading Parameters
+
+The object list and dropbox locations where retrieved as a list from the parameter server.
 
 ```python
-# Definition of the homogeneous transformation matrix
-def HTF_Matrix(alpha, a, d, q):
-    HTF = Matrix([[            cos(q),           -sin(q),           0,             a],
-                  [ sin(q)*cos(alpha), cos(q)*cos(alpha), -sin(alpha), -sin(alpha)*d],
-                  [ sin(q)*sin(alpha), cos(q)*sin(alpha),  cos(alpha),  cos(alpha)*d],
-                  [                 0,                 0,           0,             1]])
-    return HTF
-
-# Definition of the functions for the homogeneous transformation matrices of the rotations around x, y, z passing a specific angle
-# Rotation (roll)
-def Rot_x(r):
-    r_x = Matrix([[ 1,      0,       0],
-                  [ 0, cos(r), -sin(r)],
-                  [ 0, sin(r),  cos(r)]])
-    return(r_x)
-
-# Rotation (pitch)
-def Rot_y(p):
-    r_y = Matrix([[  cos(p), 0, sin(p)],
-                  [       0, 1,      0],
-                  [ -sin(p), 0, cos(p)]])
-    return(r_y)
-
-# Rotation (yaw)
-def Rot_z(y):
-    r_z = Matrix([[ cos(y), -sin(y), 0],
-                  [ sin(y),  cos(y), 0],
-                  [      0,       0, 1]])
-    return(r_z)
+    # TODO: Get/Read parameters
+    object_list_param = rospy.get_param('/object_list')
+    test_scene_num.data = 1
+    dropbox_param = rospy.get_param('/dropbox')
 ```
 
-These allowed the code to easily create the many transformation and rotation matrices by calling the functions, while still being outside of the handle_calculate_IK function. Another advantage was to generate all the transformation and rotation matrices outside the forloop to prevent them being generated constantly which would decrease performance and effectiveness. Further, I tried to leverage the DH parameters as much as possible given that they were already created and stored.
+### Calculating Centroid and Pose Messages
 
-Possibly, due to computer performance, it was rather slow still and while I tried implementing a class structure to the code.
+I've then iterated over each detected object and calculated its centroid by averaging all points. I've decided what arm to use and what bin the object should be dropped based on the object list and dropbox dictionaries.
 
-![alt text][image7]
-![alt text][image8]
+I've also introduced some randomness on the drop-off location to prevent objects from piling on top of each other resulting on a better use of the bin space.
+
+```python
+    # TODO: Loop through the pick list
+    dict_list = []
+    for i in range(0, len(object_list_param)):
+        # TODO: Parse parameters into individual variables
+        object_name.data = object_list_param[i]['name']
+        object_group = object_list_param[i]['group']
+        
+        # TODO: Get the PointCloud for a given object and obtain it's centroid
+        for object in object_list:
+            if object.label == object_name.data:
+                points_arr = ros_to_pcl(object.cloud).to_array()
+                centroid = np.mean(points_arr, axis=0)[:3]
+                
+                # TODO: Create 'place_pose' for the object
+                # TODO: Assign the arm to be used for pick_place
+                # Using the centroid obtained above to set the objects pick pose/position
+                pick_pose.position.x = np.asscalar(centroid[0])
+                pick_pose.position.y = np.asscalar(centroid[1])
+                pick_pose.position.z = np.asscalar(centroid[2])
+                
+                # Used the groups color information to select which arm to use and which location to place the object
+                if object_group == 'green':
+                    arm_name.data = 'right'
+                    place_pose.position.x = dropbox_param[1]['position'][0]
+                    place_pose.position.y = dropbox_param[1]['position'][1]
+                    place_pose.position.z = dropbox_param[1]['position'][2]
+                else:
+                    arm_name.data = 'left'
+                    place_pose.position.x = dropbox_param[0]['position'][0]
+                    place_pose.position.y = dropbox_param[0]['position'][1]
+                    place_pose.position.z = dropbox_param[0]['position'][2]
+
+                # TODO: Create a list of dictionaries (made with make_yaml_dict()) for later output to yaml format
+                yaml_dict = make_yaml_dict(test_scene_num, arm_name, object_name, pick_pose, place_pose)
+                dict_list.append(yaml_dict)
+```
+
+### Creating the .yaml Output Files
+
+Once all parameters are set they are then converted to yaml format by calling make_yaml_dict and appending the results to dict_list. This list is then encapsulated into an object and serialized to output_<world#>.yaml file:
+
+```python
+    # TODO: Output your request parameters into output yaml file
+    yaml_filename = 'output_' + str(test_scene_num.data) + '.yaml'
+    send_to_yaml(yaml_filename, dict_list)
+```
+
 
 ### Observations, possible improvements, things used
 
-While debugging the code many times (long times due to slow performance), I noticed that the code does not respond well when the planned path is relatively abnormal and navitates far away to grab a can or to move towards the bucket. Not sure why this happens but when normal trajectories are given the code performs well. Not sure if it'll require calibration or more statements to make it smarter and discern the correct path to take on that kind of situation.
+Despite having satisfactory results I was not able to address the camera noise issue. In the future I'll add a Statistical_Outlier_Removal filter at the beginning of the perception pipeline.
+
+I'll also work on improving the SVM model accuracy to achieve a correct prediction. Because I had a lot of space problems on the virtual machine when I installed the missing libraries to fix bugs.
+
+Finally I want to tackle the additional challenges of creating a collision map, sending the request to pick and place the objects and play with different table top configurations.
