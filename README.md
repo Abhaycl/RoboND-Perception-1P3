@@ -12,7 +12,8 @@ The objective of this project is to identify a series of objects and these will 
 [image2]: ./misc_images/pass_through_filtered.png "Pass Through Filtered"
 [image3]: ./misc_images/extracted_inliers.png "Extracted Inliers"
 [image4]: ./misc_images/extracted_outliers.png "Extracted Outliers"
-[image5]: ./misc_images/linear_rfb.png "Linear vs RFB"
+[image5]: ./misc_images/linear.png "Linear"
+[image5]: ./misc_images/rbf.png "RBF"
 
 
 #### How build the project
@@ -210,7 +211,7 @@ clf = svm.SVC(kernel = 'rbf')
 ```
 
 ![alt text][image5]
-###### Comparison between linear and RFB kernels
+###### Comparison between linear and RBF kernels
 
 
 I quickly notice how powerful SVMs are for small datasets. It only took me 20 examples per class to get to a very high accuracy! Usually DNNs, as a comparison, requires thousands of examples per class for decent results.
