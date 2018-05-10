@@ -87,6 +87,8 @@ You're reading it!
 
 The fist step is to read the data coming from the RGBD sensor. For that I've created a ROS node 'clustering' and subscribed to the /pr2/world/points topic:
 
+![alt text][image0]
+
 ```python
     # TODO: ROS node initialization
     rospy.init_node('clustering', anonymous = True)
