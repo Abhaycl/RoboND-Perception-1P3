@@ -33,6 +33,15 @@ For demo mode make sure the **demo** flag is set to _"true"_ in `inverse_kinemat
 3.  ./pr2_safe_spawner.sh
 ```
 
+#### How to run the program with your own code
+
+For the execution of your own code make sure the **demo** flag is set to _"false"_ in `inverse_kinematics.launch` file under /RoboND-Kinematics-Project/kuka_arm/launch
+
+```bash
+1.  cd ~/catkin_ws/src/RoboND-Perception-Project/pr2_robot/scripts
+2.  rosrun pr2_robot project_template.py
+```
+
 ---
 
 The summary of the files and folders int repo is provided in the table below:
