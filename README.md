@@ -35,7 +35,7 @@ For demo mode make sure the **demo** flag is set to _"true"_ in `inverse_kinemat
 
 #### How to run the program with your own code
 
-For the execution of your own code make sure the **demo** flag is set to _"false"_ in `inverse_kinematics.launch` file under /RoboND-Kinematics-Project/kuka_arm/launch
+For the execution of your own code
 
 ```bash
 1.  cd ~/catkin_ws/src/RoboND-Perception-Project/pr2_robot/scripts
