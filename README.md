@@ -7,13 +7,13 @@ The objective of this project is to identify a series of objects and these will 
 
 [//]: # (Image References)
 
-[image0]: ./misc_images/ ""
+[image0]: ./misc_images/objects_cam.png "Objects"
 [image1]: ./misc_images/voxel_downsampled.png "Voxel"
 [image2]: ./misc_images/pass_through_filtered.png "Pass Through Filtered"
 [image3]: ./misc_images/extracted_inliers.png "Extracted Inliers"
 [image4]: ./misc_images/extracted_outliers.png "Extracted Outliers"
 [image5]: ./misc_images/linear.png "Linear"
-[image5]: ./misc_images/rbf.png "RBF"
+[image6]: ./misc_images/rbf.png "RBF"
 
 
 #### How build the project
@@ -211,6 +211,8 @@ clf = svm.SVC(kernel = 'rbf')
 ```
 
 ![alt text][image5]
+
+![alt text][image6]
 ###### Comparison between linear and RBF kernels
 
 
