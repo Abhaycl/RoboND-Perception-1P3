@@ -115,5 +115,5 @@ if __name__ == '__main__':
     
     
     # TODO: Spin while node is not shutdown
-	while not rospy.is_shutdown():
+    while not rospy.is_shutdown():
         rospy.spin()
